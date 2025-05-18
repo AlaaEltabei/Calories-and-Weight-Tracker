@@ -1,15 +1,15 @@
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu('Food Manager')
-    .addItem('Add Food', 'showFoodDialog')
-    .addItem('Add Meal', 'showMealOptions')
+    .addItem('Add food', 'showFoodDialog')
+    .addItem('Add meal', 'showMealOptions')
     .addToUi();
 }
 
 function showFoodDialog() {
-  const html = HtmlService.createHtmlOutputFromFile('FoodForm')
+  const html = HtmlService.createHtmlOutputFromFile('food_form')
     .setWidth(300)
-    .setHeight(300);
+    .setHeight(400);
   SpreadsheetApp.getUi().showModalDialog(html, 'New food');
 }
 
@@ -60,15 +60,15 @@ function checkDuplicateFoodName(foodName) {
 }
 
 function showMealOptions() {
-  const html = HtmlService.createHtmlOutputFromFile('MealOptions')
+  const html = HtmlService.createHtmlOutputFromFile('meal_options')
     .setWidth(300)
     .setHeight(150);
   SpreadsheetApp.getUi().showModalDialog(html, 'Add Meal');
 }
 
 function showManualMealForm() {
-  const html = HtmlService.createHtmlOutputFromFile('ManualMealForm')
-    .setWidth(400)
+  const html = HtmlService.createHtmlOutputFromFile('manual_meal_form')
+    .setWidth(300)
     .setHeight(400);
   SpreadsheetApp.getUi().showModalDialog(html, 'Add Meal Manually');
 }
@@ -90,9 +90,9 @@ function addManualMeal(data) {
 
 
 function showMealFromFoodForm() {
-  const html = HtmlService.createHtmlOutputFromFile('MealFromFoodForm')
-    .setWidth(600)
-    .setHeight(500);
+  const html = HtmlService.createHtmlOutputFromFile('meal_from_food_form')
+    .setWidth(500)
+    .setHeight(300);
   SpreadsheetApp.getUi().showModalDialog(html, 'Add Meal from Existing Food');
 }
 
@@ -115,9 +115,72 @@ function addMealFromFood(data) {
     if (name) foodMap[name] = { cal, prot, carb, fat };
   });
 
+  let ingredients = data.ingredients;
+
+  // 🔍 Find duplicates
+  const counts = {};
+  ingredients.forEach(item => {
+    counts[item.food] = (counts[item.food] || 0) + 1;
+  });
+
+  const duplicates = Object.entries(counts).filter(([_, count]) => count > 1);
+  let combine = false;
+
+  if (duplicates.length > 0) {
+    const dupList = duplicates.map(d => `- ${d[0]} (${d[1]} times)`).join('\n');
+    const ui = SpreadsheetApp.getUi();
+    const response = ui.alert(
+      'Duplicate Ingredients Found',
+      `You have added the following ingredients multiple times:\n${dupList}\n\nDo you want to combine them?`,
+      ui.ButtonSet.YES_NO
+    );
+    combine = (response === ui.Button.YES);
+  }
+
+  let finalList = [];
+
+  if (combine) {
+    const combinedSet = new Set(duplicates.map(d => d[0]));
+    const seen = new Set();
+    const combined = {};
+
+    for (let item of ingredients) {
+      const { food, amount } = item;
+
+      if (combinedSet.has(food)) {
+        if (!seen.has(food)) {
+          // First appearance, create entry
+          combined[food] = amount;
+          seen.add(food);
+        } else {
+          // Additional appearance, just add to total
+          combined[food] += amount;
+        }
+      } else {
+        // Unique ingredient, add directly
+        finalList.push({ food, amount });
+      }
+    }
+
+    // Insert the combined duplicates in place of their first appearance
+    const added = new Set();
+    let output = [];
+    for (let item of ingredients) {
+      const { food } = item;
+      if (combinedSet.has(food) && !added.has(food)) {
+        output.push({ food, amount: combined[food] });
+        added.add(food);
+      } else if (!combinedSet.has(food)) {
+        output.push(item); // original unique item
+      }
+    }
+    ingredients = output;
+  }
+
+  // Now proceed with adding to sheet
   let total = { cal: 0, prot: 0, carb: 0, fat: 0 };
 
-  data.ingredients.forEach(item => {
+  ingredients.forEach(item => {
     const { food, amount } = item;
     if (!foodMap[food]) return;
 
@@ -146,13 +209,10 @@ function addMealFromFood(data) {
     Math.round(total.fat * 100) / 100
   ]);
 
-  // 🔽 Sort MealDataBase by meal name (A)
-  const mealDataRange = mealSheet.getRange(2, 1, mealSheet.getLastRow() - 1, mealSheet.getLastColumn());
-  mealDataRange.sort({ column: 1, ascending: true });
+  // Sort both Meal and Prep sheets
+  const mealRange = mealSheet.getRange(2, 1, mealSheet.getLastRow() - 1, mealSheet.getLastColumn());
+  mealRange.sort({ column: 1, ascending: true });
 
-  // 🔽 Sort MealPrep by meal name (A)
-  const prepDataRange = prepSheet.getRange(2, 1, prepSheet.getLastRow() - 1, prepSheet.getLastColumn());
-  prepDataRange.sort({ column: 1, ascending: true });
+  const prepRange = prepSheet.getRange(2, 1, prepSheet.getLastRow() - 1, prepSheet.getLastColumn());
+  prepRange.sort({ column: 1, ascending: true });
 }
-
-
