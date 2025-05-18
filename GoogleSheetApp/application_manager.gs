@@ -3,10 +3,12 @@ function onOpen() {
   ui.createMenu('Food Manager')
     .addItem('Add food', 'showFoodDialog')
     .addItem('Edit food', 'showEditFoodList')
-    .addItem('Delete food', 'showDeleteFoodDialog')  // New menu item
+    .addItem('Delete food', 'showDeleteFoodDialog')
     .addItem('Add meal', 'showMealOptions')
+    .addItem('Delete meal', 'showDeleteMealDialog')
     .addToUi();
 }
+
 
 function showFoodDialog() {
   const html = HtmlService.createHtmlOutputFromFile('food_form')
@@ -306,4 +308,53 @@ function addMealFromFood(data) {
 
   const prepRange = prepSheet.getRange(2, 1, prepSheet.getLastRow() - 1, prepSheet.getLastColumn());
   prepRange.sort({ column: 1, ascending: true });
+}
+
+function showDeleteMealDialog() {
+  const html = HtmlService.createHtmlOutputFromFile('DeleteMealDialog')
+    .setWidth(300)
+    .setHeight(150);
+  SpreadsheetApp.getUi().showModalDialog(html, 'Delete Meal');
+}
+
+function getMealNames() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("MealDataBase");
+  const names = sheet.getRange("A2:A" + sheet.getLastRow()).getValues().flat().filter(name => name);
+  return names;
+}
+
+function deleteMeal(mealName) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const mealSheet = ss.getSheetByName("MealDataBase");
+  const prepSheet = ss.getSheetByName("MealPrep");
+
+  if (!mealName) return;
+
+  // Remove from MealDataBase
+  const mealData = mealSheet.getDataRange().getValues();
+  for (let i = mealData.length - 1; i >= 1; i--) {
+    if (mealData[i][0] === mealName) {
+      mealSheet.deleteRow(i + 1);
+    }
+  }
+
+  // Remove from MealPrep
+  const prepData = prepSheet.getDataRange().getValues();
+  for (let i = prepData.length - 1; i >= 1; i--) {
+    if (prepData[i][0] === mealName) {
+      prepSheet.deleteRow(i + 1);
+    }
+  }
+
+  // Re-sort MealDataBase
+  if (mealSheet.getLastRow() > 1) {
+    const range = mealSheet.getRange(2, 1, mealSheet.getLastRow() - 1, mealSheet.getLastColumn());
+    range.sort({ column: 1, ascending: true });
+  }
+
+  // Re-sort MealPrep
+  if (prepSheet.getLastRow() > 1) {
+    const range = prepSheet.getRange(2, 1, prepSheet.getLastRow() - 1, prepSheet.getLastColumn());
+    range.sort({ column: 1, ascending: true });
+  }
 }

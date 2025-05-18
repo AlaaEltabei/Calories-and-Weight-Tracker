@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      select, button {
+        width: 100%;
+        padding: 8px;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <label for="mealSelect">Select meal to delete:</label>
+    <select id="mealSelect">
+      <option value="">-- Choose a meal --</option>
+    </select>
+    <button onclick="confirmDelete()">Delete</button>
+
+    <script>
+      // Populate dropdown
+      google.script.run.withSuccessHandler(function(meals) {
+        const select = document.getElementById('mealSelect');
+        meals.forEach(meal => {
+          const option = document.createElement('option');
+          option.value = meal;
+          option.text = meal;
+          select.appendChild(option);
+        });
+      }).getMealNames();
+
+      function confirmDelete() {
+        const meal = document.getElementById('mealSelect').value;
+        if (!meal) {
+          alert("Please select a meal to delete.");
+          return;
+        }
+
+        if (confirm("Are you sure you want to delete: " + meal + "?")) {
+          google.script.run.withSuccessHandler(() => {
+            alert(meal + " deleted.");
+            google.script.host.close();
+          }).deleteMeal(meal);
+        }
+      }
+    </script>
+  </body>
+</html>
