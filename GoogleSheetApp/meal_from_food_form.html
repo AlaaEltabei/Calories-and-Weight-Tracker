@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      .error { color: red; font-size: 0.9em; }
+      .row { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
+      .form-container { padding: 10px; }
+      input, select { padding: 4px; }
+      .ingredient-row { margin-bottom: 10px; }
+    </style>
+  </head>
+  <body>
+    <div class="form-container">
+      <h3>Add Meal from Existing Food</h3>
+      <div>
+        <label>Meal Name:</label><br>
+        <input type="text" id="mealName">
+        <div class="error" id="mealNameError"></div>
+      </div>
+
+      <div id="ingredientsContainer" style="margin-top: 10px;"></div>
+      <button id="addIngredientBtn">+ Add Ingredient</button>
+      <br><br>
+      <button id="submitMeal">Add Meal</button>
+    </div>
+
+    <script>
+      let foodOptions = [];
+
+      function createIngredientRow() {
+        const row = document.createElement('div');
+        row.className = 'ingredient-row row';
+
+        const foodSelect = document.createElement('select');
+        foodOptions.forEach(food => {
+          const option = document.createElement('option');
+          option.value = food;
+          option.textContent = food;
+          foodSelect.appendChild(option);
+        });
+
+        const amountInput = document.createElement('input');
+        amountInput.type = 'number';
+        amountInput.placeholder = 'Amount (g/ml)';
+
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error';
+
+        row.appendChild(foodSelect);
+        row.appendChild(amountInput);
+        row.appendChild(errorDiv);
+
+        document.getElementById('ingredientsContainer').appendChild(row);
+      }
+
+      document.getElementById('addIngredientBtn').addEventListener('click', createIngredientRow);
+
+      document.getElementById('submitMeal').addEventListener('click', () => {
+        const mealName = document.getElementById('mealName').value.trim();
+        const mealNameError = document.getElementById('mealNameError');
+        mealNameError.textContent = '';
+        let isValid = true;
+
+        if (!mealName) {
+          mealNameError.textContent = 'Meal name is required.';
+          isValid = false;
+        }
+
+        const ingredientRows = document.querySelectorAll('.ingredient-row');
+        const ingredients = [];
+
+        ingredientRows.forEach(row => {
+          const food = row.querySelector('select').value;
+          const amountInput = row.querySelector('input');
+          const amount = amountInput.value.trim();
+          const errorDiv = row.querySelector('.error');
+          errorDiv.textContent = '';
+
+          if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+            errorDiv.textContent = 'Amount must be a valid number.';
+            isValid = false;
+          } else {
+            ingredients.push({ food, amount: parseFloat(amount) });
+          }
+        });
+
+        if (isValid && ingredients.length > 0) {
+          google.script.run.withSuccessHandler(() => {
+            google.script.host.close();
+          }).addMealFromFood({ mealName, ingredients });
+        }
+      });
+
+      google.script.run.withSuccessHandler(function(foodList) {
+        foodOptions = foodList;
+        createIngredientRow(); // initialize with one row
+      }).getFoodList();
+    </script>
+  </body>
+</html>

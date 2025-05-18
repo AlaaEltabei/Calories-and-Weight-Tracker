@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      label { display: block; margin-top: 8px; }
+      input[type="text"], input[type="number"] {
+        width: 100%; padding: 4px;
+        box-sizing: border-box;
+      }
+      button {
+        margin-top: 12px;
+      }
+      .error {
+        color: red;
+        margin-top: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>This is the data per 100 g/ml</p>
+    <form id="foodForm">
+      <label>Food Name:
+        <input type="text" name="foodName" required>
+        <div class="error" id="foodNameError"></div>
+      </label>
+      <label>Calories:
+        <input type="text" name="calories" required>
+        <div class="error" id="caloriesError"></div>
+      </label>
+      <label>Protein:
+        <input type="text" name="protein" required>
+        <div class="error" id="proteinError"></div>
+      </label>
+      <label>Carb:
+        <input type="text" name="carb" required>
+        <div class="error" id="carbError"></div>
+      </label>
+      <label>Fat:
+        <input type="text" name="fat" required>
+        <div class="error" id="fatError"></div>
+      </label>
+      <button type="submit">Add Food</button>
+    </form>
+
+    <script>
+      document.getElementById('foodForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Clear previous error messages
+        const errorDivs = document.querySelectorAll('.error');
+        errorDivs.forEach(div => div.textContent = '');
+        
+        const form = this;
+        const formData = Object.fromEntries(new FormData(form).entries());
+        const foodName = formData.foodName.trim();
+        const numericFields = ['calories', 'protein', 'carb', 'fat'];
+        let isValid = true;
+        
+        // Validate food name
+        if (!foodName) {
+          document.getElementById('foodNameError').textContent = 'Food Name cannot be empty.';
+          isValid = false;
+        }
+
+        // Validate numeric fields
+        numericFields.forEach(field => {
+          const value = formData[field].trim();
+          if (isNaN(value) || value === '') {
+            document.getElementById(`${field}Error`).textContent = `${field.charAt(0).toUpperCase() + field.slice(1)} must be a valid number.`;
+            isValid = false;
+          }
+        });
+
+        // If any field is invalid, stop further processing
+        if (!isValid) return;
+
+        // Check if food name already exists in the database
+        google.script.run
+          .withSuccessHandler(function(exists) {
+            if (exists) {
+              document.getElementById('foodNameError').textContent = `Food with name "${foodName}" already exists.`;
+            } else {
+              // All good, send to server
+              google.script.run
+                .withSuccessHandler(() => google.script.host.close())
+                .addFoodToSheet(formData);
+            }
+          })
+          .checkDuplicateFoodName(foodName);
+      });
+    </script>
+  </body>
+</html>

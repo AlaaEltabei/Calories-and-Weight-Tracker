@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      label {
+        display: block;
+        margin-top: 10px;
+      }
+      input[type="text"] {
+        width: 100%;
+        padding: 5px;
+        box-sizing: border-box;
+      }
+      .error {
+        color: red;
+        font-size: 12px;
+      }
+      button {
+        margin-top: 15px;
+        padding: 10px;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <form id="mealForm">
+      <label>Meal Name:
+        <input type="text" name="mealName" id="mealName">
+        <div class="error" id="mealNameError"></div>
+      </label>
+      <label>Calories:
+        <input type="text" name="calories" id="calories">
+        <div class="error" id="caloriesError"></div>
+      </label>
+      <label>Protein:
+        <input type="text" name="protein" id="protein">
+        <div class="error" id="proteinError"></div>
+      </label>
+      <label>Carb:
+        <input type="text" name="carb" id="carb">
+        <div class="error" id="carbError"></div>
+      </label>
+      <label>Fat:
+        <input type="text" name="fat" id="fat">
+        <div class="error" id="fatError"></div>
+      </label>
+      <button type="submit">Add Meal</button>
+    </form>
+
+    <script>
+      document.getElementById('mealForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const errors = {
+          mealName: '',
+          calories: '',
+          protein: '',
+          carb: '',
+          fat: ''
+        };
+
+        const mealName = document.getElementById('mealName').value.trim();
+        const calories = document.getElementById('calories').value.trim();
+        const protein = document.getElementById('protein').value.trim();
+        const carb = document.getElementById('carb').value.trim();
+        const fat = document.getElementById('fat').value.trim();
+
+        let isValid = true;
+
+        if (!mealName) {
+          errors.mealName = 'Meal Name cannot be empty.';
+          isValid = false;
+        }
+
+        if (!calories || isNaN(calories)) {
+          errors.calories = 'Calories must be a valid number.';
+          isValid = false;
+        }
+
+        if (!protein || isNaN(protein)) {
+          errors.protein = 'Protein must be a valid number.';
+          isValid = false;
+        }
+
+        if (!carb || isNaN(carb)) {
+          errors.carb = 'Carb must be a valid number.';
+          isValid = false;
+        }
+
+        if (!fat || isNaN(fat)) {
+          errors.fat = 'Fat must be a valid number.';
+          isValid = false;
+        }
+
+        // Display errors
+        for (const field in errors) {
+          document.getElementById(field + 'Error').textContent = errors[field];
+        }
+
+        if (isValid) {
+          const mealData = {
+            mealName,
+            calories: parseFloat(calories),
+            protein: parseFloat(protein),
+            carb: parseFloat(carb),
+            fat: parseFloat(fat)
+          };
+          google.script.run.withSuccessHandler(() => {
+            google.script.host.close();
+          }).addManualMeal(mealData);
+        }
+      });
+    </script>
+  </body>
+</html>
