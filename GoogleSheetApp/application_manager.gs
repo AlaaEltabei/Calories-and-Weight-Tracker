@@ -2,6 +2,8 @@ function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu('Food Manager')
     .addItem('Add food', 'showFoodDialog')
+    .addItem('Edit food', 'showEditFoodList')
+    .addItem('Delete food', 'showDeleteFoodDialog')  // New menu item
     .addItem('Add meal', 'showMealOptions')
     .addToUi();
 }
@@ -57,6 +59,95 @@ function checkDuplicateFoodName(foodName) {
   // Check for duplicate food name (case-insensitive)
   const exists = data.some(row => row[0].toLowerCase() === foodName.toLowerCase());
   return exists;
+}
+
+function showEditFoodList() {
+  const html = HtmlService.createHtmlOutputFromFile('edit_food_dropdown')
+    .setWidth(300)
+    .setHeight(450);
+  SpreadsheetApp.getUi().showModalDialog(html, 'Edit Food Entry');
+}
+
+function getFoodNames() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("FoodDataBase");
+  const names = sheet.getRange("A2:A" + sheet.getLastRow()).getValues().flat().filter(name => name);
+  return names;
+}
+
+function getFoodDetails(foodName) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("FoodDataBase");
+  const data = sheet.getRange(2, 1, sheet.getLastRow()-1, 5).getValues(); // cols A-E
+  for (let i = 0; i < data.length; i++) {
+    if (data[i][0] === foodName) {
+      return {
+        calories: data[i][1],
+        protein: data[i][2],
+        carbs: data[i][3],
+        fat: data[i][4]
+      };
+    }
+  }
+  return null; // not found
+}
+
+function getAllFoodData() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("FoodDataBase");
+  const data = sheet.getRange(2,1,sheet.getLastRow()-1,5).getValues();
+  return data.map(row => ({
+    name: row[0],
+    calories: row[1],
+    protein: row[2],
+    carbs: row[3],
+    fat: row[4]
+  }));
+}
+
+function updateFoodData(name, calories, protein, carbs, fat) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('FoodDataBase');
+  const data = sheet.getRange(2,1,sheet.getLastRow()-1,5).getValues();
+
+  for (let i = 0; i < data.length; i++) {
+    if (data[i][0] === name) {
+      // Update row i+2 (since data starts from row 2)
+      sheet.getRange(i+2, 2, 1, 4).setValues([[calories, protein, carbs, fat]]);
+      return true;  // success
+    }
+  }
+  return false; // food not found
+}
+
+// Show delete dialog
+function showDeleteFoodDialog() {
+  const html = HtmlService.createHtmlOutputFromFile('delete_food_dialog')
+    .setWidth(300)
+    .setHeight(150);
+  SpreadsheetApp.getUi().showModalDialog(html, 'Delete Food Entry');
+}
+
+function deleteFood(foodName) {
+  if (!foodName) return false;
+
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('FoodDataBase');
+  const lastRow = sheet.getLastRow();
+  const lastCol = sheet.getLastColumn();
+  const dataRange = sheet.getRange(2, 1, lastRow - 1, lastCol);
+  const data = dataRange.getValues();
+
+  // Filter out the row matching foodName
+  const filteredData = data.filter(row => row[0] !== foodName);
+
+  // Clear existing data range first
+  dataRange.clearContent();
+
+  // Write filtered data back if any
+  if (filteredData.length > 0) {
+    sheet.getRange(2, 1, filteredData.length, lastCol).setValues(filteredData);
+
+    // Sort only the rows we have data for now
+    sheet.getRange(2, 1, filteredData.length, lastCol).sort({column: 1, ascending: true});
+  }
+
+  return true;
 }
 
 function showMealOptions() {

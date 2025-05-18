@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 10px;
+      }
+      label {
+        display: block;
+        margin-top: 12px;
+      }
+      select {
+        width: 100%;
+        padding: 6px;
+        font-size: 14px;
+      }
+      #deleteBtn {
+        margin-top: 20px;
+        padding: 8px 16px;
+        font-size: 15px;
+      }
+      #errorMsg {
+        color: red;
+        margin-top: 10px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <label for="foodSelect">Choose food to delete:</label>
+    <select id="foodSelect">
+      <option value="">-- Select a food --</option>
+    </select>
+    <button id="deleteBtn">Delete</button>
+    <div id="errorMsg"></div>
+
+    <script>
+      // Load food names on dialog open
+      window.onload = function() {
+        google.script.run.withSuccessHandler(function(names) {
+          const select = document.getElementById('foodSelect');
+          names.forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            select.appendChild(option);
+          });
+        }).getFoodNames();
+      };
+
+      document.getElementById('deleteBtn').addEventListener('click', function() {
+        const selectedFood = document.getElementById('foodSelect').value;
+        const errorMsg = document.getElementById('errorMsg');
+        errorMsg.textContent = '';
+
+        if (!selectedFood) {
+          errorMsg.textContent = 'Please select a food to delete.';
+          return;
+        }
+
+        if (!confirm(`Are you sure you want to delete "${selectedFood}"? This action cannot be undone.`)) {
+          return;
+        }
+
+        google.script.run.withSuccessHandler(function(success) {
+          if (success) {
+            alert(`"${selectedFood}" deleted successfully.`);
+            google.script.host.close();
+          } else {
+            errorMsg.textContent = 'Failed to delete the food. Please try again.';
+          }
+        }).deleteFood(selectedFood);
+      });
+    </script>
+  </body>
+</html>

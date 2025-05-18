@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 10px;
+      }
+      label {
+        display: block;
+        margin-top: 12px;
+      }
+      input, select {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 6px;
+        font-size: 14px;
+      }
+      .error-msg {
+        color: red;
+        font-size: 0.9em;
+        margin-bottom: 4px;
+      }
+      #saveBtn {
+        margin-top: 20px;
+        padding: 8px 16px;
+        font-size: 15px;
+      }
+      #generalError {
+        color: red;
+        margin-left: 10px;
+        vertical-align: middle;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <label for="foodSelect">Choose food:</label>
+    <div id="foodSelectError" class="error-msg"></div>
+    <select id="foodSelect">
+      <option value="">-- Select a food --</option>
+    </select>
+
+    <label for="calories">Calories:</label>
+    <div id="caloriesError" class="error-msg"></div>
+    <input type="text" id="calories" />
+
+    <label for="protein">Protein:</label>
+    <div id="proteinError" class="error-msg"></div>
+    <input type="text" id="protein" />
+
+    <label for="carbs">Carbs:</label>
+    <div id="carbsError" class="error-msg"></div>
+    <input type="text" id="carbs" />
+
+    <label for="fat">Fat:</label>
+    <div id="fatError" class="error-msg"></div>
+    <input type="text" id="fat" />
+
+    <div>
+      <button id="saveBtn">Save</button>
+      <span id="generalError"></span>
+    </div>
+
+    <script>
+      let foodDetailsMap = {};
+
+      // Populate dropdown on load
+      window.onload = function() {
+        google.script.run.withSuccessHandler(function(names) {
+          const select = document.getElementById('foodSelect');
+          names.forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            select.appendChild(option);
+          });
+        }).getFoodNames();
+
+        // Load all food data into map for quick lookup
+        google.script.run.withSuccessHandler(function(allData) {
+          foodDetailsMap = {};
+          allData.forEach(item => {
+            foodDetailsMap[item.name] = item;
+          });
+        }).getAllFoodData();
+      };
+
+      // When selection changes, load food details into fields
+      document.getElementById('foodSelect').addEventListener('change', function() {
+        clearErrors();
+        const selectedFood = this.value;
+        if (selectedFood && foodDetailsMap[selectedFood]) {
+          const details = foodDetailsMap[selectedFood];
+          document.getElementById('calories').value = details.calories;
+          document.getElementById('protein').value = details.protein;
+          document.getElementById('carbs').value = details.carbs;
+          document.getElementById('fat').value = details.fat;
+        } else {
+          document.getElementById('calories').value = '';
+          document.getElementById('protein').value = '';
+          document.getElementById('carbs').value = '';
+          document.getElementById('fat').value = '';
+        }
+      });
+
+      document.getElementById('saveBtn').addEventListener('click', function() {
+        clearErrors();
+
+        const selectedFood = document.getElementById('foodSelect').value.trim();
+        const calories = document.getElementById('calories').value.trim();
+        const protein = document.getElementById('protein').value.trim();
+        const carbs = document.getElementById('carbs').value.trim();
+        const fat = document.getElementById('fat').value.trim();
+
+        let hasError = false;
+
+        if (!selectedFood) {
+          showFieldError('foodSelect', 'Please select a food.');
+          hasError = true;
+        } else if (!foodDetailsMap[selectedFood]) {
+          showFieldError('foodSelect', 'Selected food does not exist.');
+          hasError = true;
+        }
+
+        if (calories === '' || isNaN(calories)) {
+          showFieldError('calories', 'Please enter a valid number.');
+          hasError = true;
+        }
+        if (protein === '' || isNaN(protein)) {
+          showFieldError('protein', 'Please enter a valid number.');
+          hasError = true;
+        }
+        if (carbs === '' || isNaN(carbs)) {
+          showFieldError('carbs', 'Please enter a valid number.');
+          hasError = true;
+        }
+        if (fat === '' || isNaN(fat)) {
+          showFieldError('fat', 'Please enter a valid number.');
+          hasError = true;
+        }
+
+        if (hasError) return;
+
+        google.script.run.withSuccessHandler(function(success) {
+          if (success) {
+            alert('Food updated successfully!');
+            google.script.host.close();
+          } else {
+            document.getElementById('generalError').textContent = 'Failed to update food. Please try again.';
+          }
+        }).updateFoodData(selectedFood, Number(calories), Number(protein), Number(carbs), Number(fat));
+      });
+
+      function clearErrors() {
+        ['foodSelect', 'calories', 'protein', 'carbs', 'fat'].forEach(id => {
+          const errorSpan = document.getElementById(id + 'Error');
+          if (errorSpan) errorSpan.textContent = '';
+        });
+        document.getElementById('generalError').textContent = '';
+      }
+
+      function showFieldError(fieldId, message) {
+        const errorSpan = document.getElementById(fieldId + 'Error');
+        if (errorSpan) {
+          errorSpan.textContent = message;
+        }
+      }
+    </script>
+  </body>
+</html>
