@@ -31,8 +31,6 @@
       <option selected disabled>-- Select Meal --</option>
     </select>
 
-    <button onclick="onEditMeal()">Edit Meal</button>
-
     <div id="manualEditContainer" style="display:none;">
       <h3 id="manualEditTitle"></h3>
       <label for="calories">Calories</label>
@@ -61,6 +59,14 @@
           opt.textContent = mealName;
           select.appendChild(opt);
         });
+
+        // Automatically update when a meal is selected
+			  select.addEventListener('change', function () {
+				  const selectedMeal = select.value;
+				  if (selectedMeal && selectedMeal !== '-- Select Meal --') {
+					  onEditMeal();
+				  }
+			  });
       };
 
       function onEditMeal() {
@@ -70,13 +76,12 @@
           return;
         }
         // Check if meal exists in MealPrep sheet
-        google.script.run.withSuccessHandler(function(exists) {
-          if (exists) {
-            editMealFromFood(meal);
-          } else {
-            editMealFromManual(meal);
-          }
-        }).checkMealInMealPrep(meal);
+        const existsInMealPrep = Object.values(mealsPrep).some(m => m.name === meal);
+        if (existsInMealPrep) {
+          editMealFromFood(meal);
+        } else {
+          editMealFromManual(meal);
+        }
       }
 
       function editMealFromFood(mealName) {
@@ -87,24 +92,22 @@
       // Show manual edit popup
       function editMealFromManual(mealName) {
         document.getElementById('manualEditTitle').textContent = 'Edit Meal Nutrients: ' + mealName;
-        // Clear previous values & show container
         document.getElementById('manualEditContainer').style.display = 'block';
 
-        // Load current nutrient values
-        google.script.run.withSuccessHandler(function(data) {
-          if (!data) {
-            alert('Meal not found in MealDataBase sheet.');
-            cancelManualEdit();
-            return;
-          }
-          document.getElementById('calories').value = data.calories;
-          document.getElementById('protein').value = data.protein;
-          document.getElementById('carb').value = data.carb;
-          document.getElementById('fat').value = data.fat;
+        // Use preloaded data instead of a server call
+        const meal = Object.values(meals).find(m => m.name === mealName);
+        if (!meal) {
+          alert('Meal not found in preloaded data.');
+          cancelManualEdit();
+          return;
+        }
 
-          // Store mealName on container for save function
-          document.getElementById('manualEditContainer').dataset.mealName = mealName;
-        }).getMealNutrients(mealName);
+        document.getElementById('calories').value = meal.calories;
+        document.getElementById('protein').value = meal.protein;
+        document.getElementById('carb').value = meal.carb;
+        document.getElementById('fat').value = meal.fat;
+
+        document.getElementById('manualEditContainer').dataset.mealName = mealName;
       }
 
       // Save manual edit values
@@ -136,7 +139,7 @@
       }
 
       function cancelManualEdit() {
-        document.getElementById('manualEditContainer').style.display = 'none';
+        google.script.host.close();
       }
     </script>
   </body>

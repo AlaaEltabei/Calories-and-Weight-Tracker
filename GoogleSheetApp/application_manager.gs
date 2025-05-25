@@ -118,6 +118,7 @@ function updateFoodData(name, calories, protein, carbs, fat) {
   return false; // food not found
 }
 
+// Show delete dialog
 function showDeleteFoodDialog() {
   const html = HtmlService.createHtmlOutputFromFile('delete_food_dialog')
     .setWidth(300)
@@ -410,13 +411,6 @@ function showEditMealDialog() {
   );
 }
 
-function checkMealInMealPrep(mealName) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("MealPrep");
-  if (!sheet) return false;
-  const meals = sheet.getRange("A2:A" + sheet.getLastRow()).getValues().flat();
-  return meals.includes(mealName);
-}
-
 function editMealFromFood(mealName) {
   // Placeholder: open a custom dialog or do something with the meal
   Logger.log("Editing meal from food: " + mealName);
@@ -487,20 +481,4 @@ function updateMealNutrients(mealName, updatedData) {
   sheet.getRange(rowIndex, 3).setValue(updatedData.protein);
   sheet.getRange(rowIndex, 4).setValue(updatedData.carb);
   sheet.getRange(rowIndex, 5).setValue(updatedData.fat);
-}
-
-function getMealNutrients(mealName) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("MealDataBase");
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0] === mealName) {
-      return {
-        calories: data[i][1],
-        protein: data[i][2],
-        carb: data[i][3],
-        fat: data[i][4]
-      };
-    }
-  }
-  return null;
 }
