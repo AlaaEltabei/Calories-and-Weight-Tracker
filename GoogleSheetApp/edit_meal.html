@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      label {
+        display: block;
+        margin-top: 10px;
+        font-weight: bold;
+      }
+      select, input, button {
+        width: 100%;
+        padding: 8px;
+        font-size: 14px;
+        margin-top: 5px;
+      }
+      #manualEditContainer {
+        margin-top: 20px;
+        border-top: 1px solid #ddd;
+        padding-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <label for="mealSelect">Select Meal:</label>
+    <select id="mealSelect">
+      <option selected disabled>-- Select Meal --</option>
+    </select>
+
+    <button onclick="onEditMeal()">Edit Meal</button>
+
+    <div id="manualEditContainer" style="display:none;">
+      <h3 id="manualEditTitle"></h3>
+      <label for="calories">Calories</label>
+      <input type="text" id="calories" />
+      <label for="protein">Protein</label>
+      <input type="text" id="protein" />
+      <label for="carb">Carb</label>
+      <input type="text" id="carb" />
+      <label for="fat">Fat</label>
+      <input type="text" id="fat" />
+      <button onclick="saveManualEdit()">Save</button>
+      <button onclick="cancelManualEdit()">Cancel</button>
+    </div>
+
+    <script>
+      const meals = JSON.parse('<?= JSON.stringify(meals) ?>');
+  const mealsPrep = JSON.parse('<?= JSON.stringify(mealsPrep) ?>');
+
+  window.onload = function () {
+    const select = document.getElementById('mealSelect');
+    
+    Object.keys(meals).forEach(key => {
+      const mealName = meals[key].name;
+      console.log("Adding meal:", mealName); // ✅ Debug
+
+      const opt = document.createElement('option');
+      opt.value = mealName;
+      opt.textContent = mealName;
+      select.appendChild(opt);
+    });
+  };
+
+      function onEditMeal() {
+        const meal = document.getElementById('mealSelect').value;
+        if (!meal || meal === '-- Select Meal --') {
+          alert('Please select a meal first.');
+          return;
+        }
+        // Check if meal exists in MealPrep sheet
+        google.script.run.withSuccessHandler(function(exists) {
+          if (exists) {
+            editMealFromFood(meal);
+          } else {
+            editMealFromManual(meal);
+          }
+        }).checkMealInMealPrep(meal);
+      }
+
+      function editMealFromFood(mealName) {
+        alert('editMealFromFood placeholder for meal: ' + mealName);
+        // You can implement this later
+      }
+
+      // Show manual edit popup
+      function editMealFromManual(mealName) {
+        document.getElementById('manualEditTitle').textContent = 'Edit Meal Nutrients: ' + mealName;
+        // Clear previous values & show container
+        document.getElementById('manualEditContainer').style.display = 'block';
+
+        // Load current nutrient values
+        google.script.run.withSuccessHandler(function(data) {
+          if (!data) {
+            alert('Meal not found in MealDataBase sheet.');
+            cancelManualEdit();
+            return;
+          }
+          document.getElementById('calories').value = data.calories;
+          document.getElementById('protein').value = data.protein;
+          document.getElementById('carb').value = data.carb;
+          document.getElementById('fat').value = data.fat;
+
+          // Store mealName on container for save function
+          document.getElementById('manualEditContainer').dataset.mealName = mealName;
+        }).getMealNutrients(mealName);
+      }
+
+      // Save manual edit values
+      function saveManualEdit() {
+        const mealName = document.getElementById('manualEditContainer').dataset.mealName;
+        const calories = parseFloat(document.getElementById('calories').value);
+        const protein = parseFloat(document.getElementById('protein').value);
+        const carb = parseFloat(document.getElementById('carb').value);
+        const fat = parseFloat(document.getElementById('fat').value);
+
+        if (
+          isNaN(calories) || isNaN(protein) ||
+          isNaN(carb) || isNaN(fat)
+        ) {
+          alert('Please enter valid numeric values for all fields.');
+          return;
+        }
+
+        const updatedData = { calories, protein, carb, fat };
+        google.script.run
+          .withSuccessHandler(() => {
+            alert('Meal nutrients updated successfully.');
+            cancelManualEdit();
+          })
+          .withFailureHandler(function(err) {
+            alert('Error updating meal: ' + err.message);
+          })
+          .updateMealNutrients(mealName, updatedData);
+      }
+
+      function cancelManualEdit() {
+        document.getElementById('manualEditContainer').style.display = 'none';
+      }
+    </script>
+  </body>
+</html>

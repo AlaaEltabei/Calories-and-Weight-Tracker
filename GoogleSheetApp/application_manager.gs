@@ -5,10 +5,10 @@ function onOpen() {
     .addItem('Edit food', 'showEditFoodList')
     .addItem('Delete food', 'showDeleteFoodDialog')
     .addItem('Add meal', 'showMealOptions')
+    .addItem('Edit meal', 'showEditMealDialog')
     .addItem('Delete meal', 'showDeleteMealDialog')
     .addToUi();
 }
-
 
 function showFoodDialog() {
   const html = HtmlService.createHtmlOutputFromFile('food_form')
@@ -118,7 +118,6 @@ function updateFoodData(name, calories, protein, carbs, fat) {
   return false; // food not found
 }
 
-// Show delete dialog
 function showDeleteFoodDialog() {
   const html = HtmlService.createHtmlOutputFromFile('delete_food_dialog')
     .setWidth(300)
@@ -180,7 +179,6 @@ function addManualMeal(data) {
   const dataRange = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn());
   dataRange.sort({ column: 1, ascending: true });
 }
-
 
 function showMealFromFoodForm() {
   const html = HtmlService.createHtmlOutputFromFile('meal_from_food_form')
@@ -311,7 +309,7 @@ function addMealFromFood(data) {
 }
 
 function showDeleteMealDialog() {
-  const html = HtmlService.createHtmlOutputFromFile('DeleteMealDialog')
+  const html = HtmlService.createHtmlOutputFromFile('delete_meal_dialog')
     .setWidth(300)
     .setHeight(150);
   SpreadsheetApp.getUi().showModalDialog(html, 'Delete Meal');
@@ -319,7 +317,15 @@ function showDeleteMealDialog() {
 
 function getMealNames() {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("MealDataBase");
-  const names = sheet.getRange("A2:A" + sheet.getLastRow()).getValues().flat().filter(name => name);
+  const colA = sheet.getRange("A2:A").getValues();
+  const names = [];
+
+  for (let i = 0; i < colA.length; i++) {
+    const name = colA[i][0];
+    if (!name) break;  // Stop at first empty cell
+    names.push(name);
+  }
+
   return names;
 }
 
@@ -357,4 +363,144 @@ function deleteMeal(mealName) {
     const range = prepSheet.getRange(2, 1, prepSheet.getLastRow() - 1, prepSheet.getLastColumn());
     range.sort({ column: 1, ascending: true });
   }
+}
+
+function showEditMealDialog() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const dbSheet = ss.getSheetByName("MealDataBase");
+  const prepSheet = ss.getSheetByName("MealPrep");
+
+  // Load MealDataBase as array of meal objects
+  const dbData = dbSheet.getDataRange().getValues(); // includes header
+  const meals = []; // array of {name, calories, protein, carb, fat}
+  for (let i = 1; i < dbData.length; i++) {
+    const row = dbData[i];
+    meals.push({
+      name: row[0],
+      calories: row[1],
+      protein: row[2],
+      carb: row[3],
+      fat: row[4]
+    });
+  }
+
+  // Load MealPrep
+  const prepData = prepSheet.getDataRange().getValues(); // includes header
+  const mealsPrep = [];
+  for (let i = 1; i < prepData.length; i++) {
+    const row = prepData[i];
+    mealsPrep.push({
+      name: row[0],
+      food: row[1],
+      amount: row[2],
+      calories: row[3],
+      protein: row[4],
+      carb: row[5],
+      fat: row[6]
+    });
+  }
+
+  const html = HtmlService.createTemplateFromFile('edit_meal');
+  html.meals = meals;
+  html.mealsPrep = mealsPrep;
+
+  SpreadsheetApp.getUi().showModalDialog(
+    html.evaluate().setWidth(500).setHeight(600),
+    'Edit Meal'
+  );
+}
+
+function checkMealInMealPrep(mealName) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("MealPrep");
+  if (!sheet) return false;
+  const meals = sheet.getRange("A2:A" + sheet.getLastRow()).getValues().flat();
+  return meals.includes(mealName);
+}
+
+function editMealFromFood(mealName) {
+  // Placeholder: open a custom dialog or do something with the meal
+  Logger.log("Editing meal from food: " + mealName);
+}
+
+function editMealFromManual(mealName) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("MealDataBase");
+  const data = sheet.getDataRange().getValues();
+
+  // Find the row with the mealName in column A (index 0)
+  let mealRow = null;
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === mealName) {
+      mealRow = data[i];
+      break;
+    }
+  }
+  if (!mealRow) {
+    SpreadsheetApp.getUi().alert('Meal not found in MealDataBase.');
+    return;
+  }
+
+  // Extract Calories, Protein, Carb, Fat from columns B, C, D, E (indexes 1,2,3,4)
+  const mealData = {
+    calories: mealRow[1],
+    protein: mealRow[2],
+    carb: mealRow[3],
+    fat: mealRow[4]
+  };
+
+  // Pass data and mealName to the dialog
+  const html = HtmlService.createTemplateFromFile('edit_meal_manual');
+  html.mealName = mealName;
+  html.mealData = mealData;
+
+  SpreadsheetApp.getUi().showModalDialog(html.evaluate().setWidth(350).setHeight(300), mealName);
+}
+
+function updateMealNutrients(mealName, updatedData) {
+  // Validate all inputs are numbers (floats)
+  const fields = ['calories', 'protein', 'carb', 'fat'];
+  for (const field of fields) {
+    const val = updatedData[field];
+    if (typeof val !== 'number' || isNaN(val)) {
+      throw new Error(`Invalid value for ${field}. Please enter a valid number.`);
+    }
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("MealDataBase");
+  const data = sheet.getDataRange().getValues();
+
+  // Find the row with the mealName in column A (index 0)
+  let rowIndex = -1;
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === mealName) {
+      rowIndex = i + 1; // +1 because sheet rows start at 1
+      break;
+    }
+  }
+  if (rowIndex === -1) {
+    throw new Error('Meal not found: ' + mealName);
+  }
+
+  // Update columns B, C, D, E (2,3,4,5) with new values
+  sheet.getRange(rowIndex, 2).setValue(updatedData.calories);
+  sheet.getRange(rowIndex, 3).setValue(updatedData.protein);
+  sheet.getRange(rowIndex, 4).setValue(updatedData.carb);
+  sheet.getRange(rowIndex, 5).setValue(updatedData.fat);
+}
+
+function getMealNutrients(mealName) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("MealDataBase");
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === mealName) {
+      return {
+        calories: data[i][1],
+        protein: data[i][2],
+        carb: data[i][3],
+        fat: data[i][4]
+      };
+    }
+  }
+  return null;
 }
