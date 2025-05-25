@@ -1,9 +1,11 @@
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
-  ui.createMenu('Food Manager')
+  ui.createMenu('Food')
     .addItem('Add food', 'showFoodDialog')
     .addItem('Edit food', 'showEditFoodList')
     .addItem('Delete food', 'showDeleteFoodDialog')
+    .addToUi();
+  ui.createMenu('Meals')
     .addItem('Add meal', 'showMealOptions')
     .addItem('Edit meal', 'showEditMealDialog')
     .addItem('Delete meal', 'showDeleteMealDialog')
