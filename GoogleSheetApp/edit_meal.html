@@ -7,23 +7,42 @@
         font-family: Arial, sans-serif;
         padding: 20px;
       }
-      label {
-        display: block;
+
+      .field-row {
+        display: flex;
+        align-items: center;
         margin-top: 10px;
-        font-weight: bold;
       }
-      select, input, button {
+
+      .field-row label {
+        width: 100px;
+        margin-right: 10px;
+        font-weight: normal;
+      }
+
+      .field-row input {
+        flex: 1;
+        padding: 8px;
+        font-size: 14px;
+      }
+
+      select, button {
         width: 100%;
         padding: 8px;
         font-size: 14px;
         margin-top: 5px;
       }
+
       #manualEditContainer {
         margin-top: 20px;
         border-top: 1px solid #ddd;
         padding-top: 20px;
       }
-    </style>
+
+      #manualEditTitle b {
+        font-weight: bold;
+      }
+  </style>
   </head>
   <body>
     <label for="mealSelect">Select Meal:</label>
@@ -32,18 +51,31 @@
     </select>
 
     <div id="manualEditContainer" style="display:none;">
-      <h3 id="manualEditTitle"></h3>
-      <label for="calories">Calories</label>
-      <input type="text" id="calories" />
-      <label for="protein">Protein</label>
-      <input type="text" id="protein" />
-      <label for="carb">Carb</label>
-      <input type="text" id="carb" />
-      <label for="fat">Fat</label>
-      <input type="text" id="fat" />
+      <p id="manualEditTitle" style="font-size: 18px; margin-bottom: 15px;"></p>
+
+      <div class="field-row">
+        <label for="calories">Calories:</label>
+        <input type="text" id="calories" />
+      </div>
+
+      <div class="field-row">
+        <label for="protein">Protein:</label>
+        <input type="text" id="protein" />
+      </div>
+
+      <div class="field-row">
+        <label for="carb">Carb:</label>
+        <input type="text" id="carb" />
+      </div>
+
+      <div class="field-row">
+        <label for="fat">Fat:</label>
+        <input type="text" id="fat" />
+      </div>
+
       <button onclick="saveManualEdit()">Save</button>
       <button onclick="cancelManualEdit()">Cancel</button>
-    </div>
+  </div>
 
     <script>
       const meals = JSON.parse('<?= JSON.stringify(meals) ?>');
@@ -91,7 +123,7 @@
 
       // Show manual edit popup
       function editMealFromManual(mealName) {
-        document.getElementById('manualEditTitle').textContent = 'Edit Meal Nutrients: ' + mealName;
+        document.getElementById('manualEditTitle').innerHTML = 'Edit Meal Nutrients: <b>' + mealName + '</b>';
         document.getElementById('manualEditContainer').style.display = 'block';
 
         // Use preloaded data instead of a server call
