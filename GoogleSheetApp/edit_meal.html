@@ -77,6 +77,13 @@
       <button onclick="cancelManualEdit()">Cancel</button>
   </div>
 
+  <div id="foodEditContainer" style="display:none; margin-top: 20px;">
+    <h3>Edit Meal Ingredients</h3>
+    <div id="ingredientsList"></div>
+    <button id="saveFoodEditBtn">Save</button>
+    <button id="cancelFoodEditBtn">Cancel</button>
+  </div>
+
     <script>
       const meals = JSON.parse('<?= JSON.stringify(meals) ?>');
       const mealsPrep = JSON.parse('<?= JSON.stringify(mealsPrep) ?>');
@@ -117,12 +124,119 @@
       }
 
       function editMealFromFood(mealName) {
-        alert('editMealFromFood placeholder for meal: ' + mealName);
-        // You can implement this later
+        // Hide manual edit container and clear its inputs
+        const manualContainer = document.getElementById('manualEditContainer');
+        manualContainer.style.display = 'none';
+        document.getElementById('calories').value = '';
+        document.getElementById('protein').value = '';
+        document.getElementById('carb').value = '';
+        document.getElementById('fat').value = '';
+        manualContainer.dataset.mealName = '';
+
+        const container = document.getElementById('foodEditContainer');
+        const listDiv = document.getElementById('ingredientsList');
+        listDiv.innerHTML = ''; // Clear previous content
+
+        // Filter ingredients for selected meal
+        const ingredients = mealsPrep.filter(m => m.name === mealName);
+        if (ingredients.length === 0) {
+          alert('No ingredients found for this meal.');
+          return;
+        }
+
+        // Show container
+        container.style.display = 'block';
+
+        // Render each ingredient as a line: Food (text) and Amount (input)
+        ingredients.forEach((ingredient, index) => {
+          const div = document.createElement('div');
+          div.style.marginBottom = '8px';
+          div.style.display = 'flex';
+          div.style.alignItems = 'center';
+          div.style.gap = '10px';
+
+          const foodSpan = document.createElement('span');
+          foodSpan.textContent = ingredient.food;
+          foodSpan.style.width = '150px';  // fixed width for alignment
+
+          const amountInput = document.createElement('input');
+          amountInput.type = 'text';
+          amountInput.value = ingredient.amount;
+          amountInput.style.flex = '1';   // fill remaining space
+          amountInput.dataset.index = index;
+
+          const errorSpan = document.createElement('span');
+          errorSpan.style.color = 'red';
+          errorSpan.style.minWidth = '140px';
+          errorSpan.className = 'error';
+
+          div.appendChild(foodSpan);
+          div.appendChild(amountInput);
+          div.appendChild(errorSpan);
+
+          listDiv.appendChild(div);
+        });
+
+        // Save button handler
+        document.getElementById('saveFoodEditBtn').onclick = () => {
+          let isValid = true;
+          const updatedIngredients = [];
+
+          // Validate all inputs
+          listDiv.querySelectorAll('div').forEach(div => {
+            const input = div.querySelector('input');
+            const error = div.querySelector('.error');
+            error.textContent = '';
+
+            const val = input.value.trim();
+            if (!val || isNaN(val) || parseFloat(val) <= 0) {
+              error.textContent = 'Enter valid positive number';
+              isValid = false;
+            } else {
+              updatedIngredients.push({
+                food: div.querySelector('span').textContent,
+                amount: parseFloat(val)
+              });
+            }
+          });
+
+          if (!isValid) return;
+
+          // Delete old meal and add updated one
+          google.script.run.withSuccessHandler(() => {
+            google.script.host.close();
+          }).withFailureHandler(err => {
+            alert('Error updating meal: ' + err.message);
+          }).deleteMeal(mealName);
+
+          // Wait a bit for delete to complete before adding (or chain server calls)
+          // Better to chain on server, but here's a quick client-side wait:
+          setTimeout(() => {
+            google.script.run.withSuccessHandler(() => {
+              google.script.host.close();
+            }).withFailureHandler(err => {
+              alert('Error adding updated meal: ' + err.message);
+            }).addMealFromFood({ mealName, ingredients: updatedIngredients });
+          }, 500);
+        };
+
+        // Cancel button handler
+        document.getElementById('cancelFoodEditBtn').onclick = () => {
+          container.style.display = 'none';
+        };
       }
 
       // Show manual edit popup
       function editMealFromManual(mealName) {
+        // Hide food edit container and clear its contents
+        const foodContainer = document.getElementById('foodEditContainer');
+        foodContainer.style.display = 'none';
+        document.getElementById('ingredientsList').innerHTML = '';
+
+        // Show manual edit container
+        const manualContainer = document.getElementById('manualEditContainer');
+        manualContainer.style.display = 'block';
+
         document.getElementById('manualEditTitle').innerHTML = 'Edit Meal Nutrients: <b>' + mealName + '</b>';
         document.getElementById('manualEditContainer').style.display = 'block';
 

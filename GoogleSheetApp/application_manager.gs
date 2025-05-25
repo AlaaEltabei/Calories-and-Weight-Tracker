@@ -393,11 +393,7 @@ function showEditMealDialog() {
     mealsPrep.push({
       name: row[0],
       food: row[1],
-      amount: row[2],
-      calories: row[3],
-      protein: row[4],
-      carb: row[5],
-      fat: row[6]
+      amount: row[2]
     });
   }
 
