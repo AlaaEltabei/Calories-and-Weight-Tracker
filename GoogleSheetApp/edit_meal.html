@@ -262,17 +262,23 @@
           return;
         }
 
-        // Delete current meal and add updated ingredients
+        // Proper chaining of calls
         google.script.run
           .withSuccessHandler(() => {
-            alert('Meal updated successfully.');
-            google.script.host.close();
+            // After deleteMeal success, add new meal
+            google.script.run
+              .withSuccessHandler(() => {
+                google.script.host.close();
+              })
+              .withFailureHandler(err => {
+                alert('Error adding updated meal: ' + err.message);
+              })
+              .addMealFromFood({ mealName, ingredients: newIngredients });
           })
-          .withFailureHandler(err => alert('Error updating meal: ' + err.message))
+          .withFailureHandler(err => {
+            alert('Error deleting meal: ' + err.message);
+          })
           .deleteMeal(mealName);
-
-        // Then add the new ingredients after deletion
-        google.script.run.addMealFromFood({ mealName, ingredients: newIngredients });
       }
 
       // Show manual edit popup
