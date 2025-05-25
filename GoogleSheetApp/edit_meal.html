@@ -49,21 +49,19 @@
 
     <script>
       const meals = JSON.parse('<?= JSON.stringify(meals) ?>');
-  const mealsPrep = JSON.parse('<?= JSON.stringify(mealsPrep) ?>');
+      const mealsPrep = JSON.parse('<?= JSON.stringify(mealsPrep) ?>');
 
-  window.onload = function () {
-    const select = document.getElementById('mealSelect');
+      window.onload = function () {
+        const select = document.getElementById('mealSelect');
     
-    Object.keys(meals).forEach(key => {
-      const mealName = meals[key].name;
-      console.log("Adding meal:", mealName); // ✅ Debug
-
-      const opt = document.createElement('option');
-      opt.value = mealName;
-      opt.textContent = mealName;
-      select.appendChild(opt);
-    });
-  };
+        Object.keys(meals).forEach(key => {
+          const mealName = meals[key].name;
+          const opt = document.createElement('option');
+          opt.value = mealName;
+          opt.textContent = mealName;
+          select.appendChild(opt);
+        });
+      };
 
       function onEditMeal() {
         const meal = document.getElementById('mealSelect').value;
