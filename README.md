@@ -9,9 +9,10 @@ A calories and weight tracker application to provide the user with the ability t
  - Delete existing food ✅
  - Delete existing manully-added meal ✅
  - Delete existing added-from-food meal ✅
+ - Edit existing manully-added meal ✅
+ - Edit existing added-from-food meal ✅
+ - Separate the food and meals windows ✅
  
 ### ToDo:
- - [ ] Edit existing manully-added meal
- - [ ] Edit existing added-from-food meal
- - [ ] Separate the food and meals windows
  - [ ] Add "Arrange" button to both windows
+ - [ ] Implement setting target functionalities
