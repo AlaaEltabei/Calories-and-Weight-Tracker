@@ -397,9 +397,12 @@ function showEditMealDialog() {
     });
   }
 
+  const foodNames = getFoodNames();
+
   const html = HtmlService.createTemplateFromFile('edit_meal');
   html.meals = meals;
   html.mealsPrep = mealsPrep;
+  html.mealsPrepFoods = foodNames;
 
   SpreadsheetApp.getUi().showModalDialog(
     html.evaluate().setWidth(500).setHeight(600),
