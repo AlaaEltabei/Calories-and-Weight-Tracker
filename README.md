@@ -19,7 +19,7 @@ A calories and weight tracker application to provide the user with the ability t
  - [ ] Implement log calories, weight and activities
  - [ ] Overview sheet
  - [ ] Calculation/Insights sheet: all adaptive by date
-		- [ ] Weight graph and it also shows the weekly average
-		- [ ] Calories intake graph and it also shows weekly average
-		- [ ] Energy expenditure grapgh with weekly average
-		- [ ] Expected metabolic rate
+	- [ ] Weight graph and it also shows the weekly average
+	- [ ] Calories intake graph and it also shows weekly average
+	- [ ] Energy expenditure grapgh with weekly average
+	- [ ] Expected metabolic rate
