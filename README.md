@@ -12,7 +12,14 @@ A calories and weight tracker application to provide the user with the ability t
  - Edit existing manully-added meal ✅
  - Edit existing added-from-food meal ✅
  - Separate the food and meals windows ✅
+ - Add "Arrange" button to both windows ✅
  
 ### ToDo:
- - [ ] Add "Arrange" button to both windows
  - [ ] Implement setting target functionalities
+ - [ ] Implement log calories, weight and activities
+ - [ ] Overview sheet
+ - [ ] Calculation/Insights sheet: all adaptive by date
+		- [ ] Weight graph and it also shows the weekly average
+		- [ ] Calories intake graph and it also shows weekly average
+		- [ ] Energy expenditure grapgh with weekly average
+		- [ ] Expected metabolic rate
