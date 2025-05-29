@@ -1,14 +1,16 @@
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu('Food')
-    .addItem('Add food', 'showFoodDialog')
-    .addItem('Edit food', 'showEditFoodList')
-    .addItem('Delete food', 'showDeleteFoodDialog')
+    .addItem('Add Food', 'showFoodDialog')
+    .addItem('Edit Food', 'showEditFoodList')
+    .addItem('Delete Food', 'showDeleteFoodDialog')
+    .addItem('Sort Food Database', 'sortFoodDatabase')
     .addToUi();
   ui.createMenu('Meals')
-    .addItem('Add meal', 'showMealOptions')
-    .addItem('Edit meal', 'showEditMealDialog')
-    .addItem('Delete meal', 'showDeleteMealDialog')
+    .addItem('Add Meal', 'showMealOptions')
+    .addItem('Edit Meal', 'showEditMealDialog')
+    .addItem('Delete Meal', 'showDeleteMealDialog')
+    .addItem('Sort Meal Database', 'sortMealDatabase')
     .addToUi();
 }
 
@@ -152,6 +154,30 @@ function deleteFood(foodName) {
   }
 
   return true;
+}
+
+function sortFoodDatabase() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("FoodDataBase");
+  if (!sheet) {
+    SpreadsheetApp.getUi().alert("Error: Sheet named 'FoodDataBase' not found.");
+    return;
+  }
+
+  const startRow = 2; // skip header
+  const lastRow = sheet.getLastRow();
+  const numRows = lastRow - startRow + 1;
+
+  if (numRows <= 0) {
+    SpreadsheetApp.getUi().alert("No food data to sort.");
+    return;
+  }
+
+  const range = sheet.getRange(startRow, 1, numRows, 5);
+  const data = range.getValues();
+
+  data.sort((a, b) => a[0].toLowerCase().localeCompare(b[0].toLowerCase()));
+
+  range.setValues(data);
 }
 
 function showMealOptions() {
@@ -482,4 +508,28 @@ function updateMealNutrients(mealName, updatedData) {
   sheet.getRange(rowIndex, 3).setValue(updatedData.protein);
   sheet.getRange(rowIndex, 4).setValue(updatedData.carb);
   sheet.getRange(rowIndex, 5).setValue(updatedData.fat);
+}
+
+function sortMealDatabase() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("MealDataBase");
+  if (!sheet) {
+    SpreadsheetApp.getUi().alert("Error: Sheet named 'MealDataBase' not found.");
+    return;
+  }
+
+  const startRow = 2; // skip header
+  const lastRow = sheet.getLastRow();
+  const numRows = lastRow - startRow + 1;
+
+  if (numRows <= 0) {
+    SpreadsheetApp.getUi().alert("No meal data to sort.");
+    return;
+  }
+
+  const range = sheet.getRange(startRow, 1, numRows, 5);
+  const data = range.getValues();
+
+  data.sort((a, b) => a[0].toLowerCase().localeCompare(b[0].toLowerCase()));
+
+  range.setValues(data);
 }
